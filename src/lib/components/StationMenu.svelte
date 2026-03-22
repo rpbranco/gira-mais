@@ -188,6 +188,7 @@
 					$t('bike_unlock_invalid_id_error'),
 					2000,
 				);
+				bikeIdInput?.focus();
 				return;
 			}
 			let serial = IdToSerial.get(bikeId);
@@ -197,6 +198,7 @@
 					$t('bike_unlock_no_serial_error'),
 					3000,
 				);
+				bikeIdInput?.focus();
 				return;
 			}
 			dismiss();
