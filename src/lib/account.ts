@@ -1,18 +1,16 @@
-import { get, writable } from 'svelte/store';
-import { getTokensLogin, getTokensRefresh, getUserInfo } from '$lib/emel-api/emel-api';
-import { currentTrip, tripRating } from '$lib/trip';
-import { selectedStation } from '$lib/map.svelte';
-import { Preferences } from '@capacitor/preferences';
-import { startWS } from '$lib/gira-api/ws';
-import { updateOnetimeInfo } from '$lib/injest-api-data';
-import { GIRA_MAIS_API_URL } from './constants';
 import { dev, version } from '$app/environment';
-import { httpRequestWithRetry } from '$lib/utils';
-import { errorMessages } from './ui.svelte';
-import { t } from './translations';
+import { encryptToken } from '$lib/crypto';
+import { getTokensLogin, getTokensRefresh, getUserInfo } from '$lib/emel-api/emel-api';
+import { startWS } from '$lib/gira-api/ws';
 import { reportErrorEvent } from '$lib/gira-mais-api/gira-mais-api';
-import { encryptToken, hash } from '$lib/crypto';
+import { updateOnetimeInfo } from '$lib/injest-api-data';
+import { selectedStation } from '$lib/map.svelte';
+import { currentTrip, tripRating } from '$lib/trip';
+import { httpRequestWithRetry } from '$lib/utils';
 import { Network } from '@capacitor/network';
+import { Preferences } from '@capacitor/preferences';
+import { get, writable } from 'svelte/store';
+import { GIRA_MAIS_API_URL } from './constants';
 
 export type Token = {
   accessToken: string;
@@ -165,7 +163,7 @@ export async function login(email: string, password: string) {
 	if (response.error.code !== 0) return response.error.code;
 	const { accessToken, refreshToken, expiration } = response.data;
 	if (!accessToken || !refreshToken) return response.error.code;
-	await fetchFirebaseToken(await hash(email), accessToken);
+	// await fetchFirebaseToken(await hash(email), accessToken);
 	token.set({ accessToken, refreshToken, expiration });
 	return 0;
 }
@@ -199,7 +197,7 @@ export async function refreshToken() {
 			continue;
 		}
 		const { accessToken, refreshToken, expiration } = response.data;
-		await fetchFirebaseToken(await hash(creds.email), accessToken);
+		// await fetchFirebaseToken(await hash(creds.email), accessToken);
 		token.set({ accessToken, refreshToken, expiration });
 		success = true;
 	}
