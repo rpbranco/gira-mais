@@ -26,10 +26,34 @@
 	let imagesLoaded = $state(false);
 	let ready = $derived(mapLoaded && imagesLoaded && !loading && stations.value.length !== 0);
 	let blurred = $state(true);
+	let lastAppliedPaddingSignature = $state('');
+	const FOLLOW_ZOOM = 16;
+	let cameraCenter = $state<{ lng: number; lat: number }>({ lng: -9.15, lat: 38.744 });
+	let cameraZoom = $state(11);
+	let cameraPadding = $state<{ top: number; bottom: number; left: number; right: number }>({ top: 0, bottom: 0, left: 0, right: 0 });
 
 	$effect(() => {
 		if (ready) setTimeout(() => blurred = false, 500);
 	});
+
+	function getConstrainedBottomPadding() {
+		return Math.min(bottomPadding, window.innerHeight / 2);
+	}
+
+	function getPaddingSignature(padding: { top: number; bottom: number; left: number; right: number }) {
+		return `${Math.round(padding.top)}:${Math.round(padding.bottom)}:${Math.round(padding.left)}:${Math.round(padding.right)}`;
+	}
+
+	function handleMove() {
+		if (!map) return;
+		const padding = map.getPadding();
+		cameraPadding = {
+			top: padding.top ?? 0,
+			bottom: padding.bottom ?? 0,
+			left: padding.left ?? 0,
+			right: padding.right ?? 0,
+		};
+	}
 
 	$effect(() => {
 		if ($bearingNorth && map) map.flyTo({ bearing: 0 });
@@ -88,6 +112,31 @@
 	let showDockLayer = $derived($currentTrip !== null);
 
 	// Handle station click
+	function getMapPadding() {
+		return {
+			top: topPadding,
+			bottom: getConstrainedBottomPadding(),
+			left: leftPadding,
+			right: 0,
+		};
+	}
+
+	function focusSelectedStation(
+		padding: { top: number; bottom: number; left: number; right: number } = getMapPadding(),
+		zoom?: number,
+	) {
+		if (!map || $selectedStation == null) return;
+		const station = stations.value.find(s => s.serialNumber === $selectedStation);
+		if (!station) return;
+		const camera: maplibregl.EaseToOptions = {
+			center: [station.longitude, station.latitude],
+			padding,
+			duration: 220,
+		};
+		if (zoom !== undefined) camera.zoom = zoom;
+		map.easeTo(camera);
+	}
+
 	async function handleStationClick(e: MapLayerMouseEvent) {
 		if (!e.features || e.features.length === 0 || !map) return;
 		following.set(false);
@@ -96,7 +145,7 @@
 		selectedStation.set(props.serialNumber);
 		await tick();
 		await tick();
-		map.flyTo({ center: feature.geometry.coordinates as [number, number] });
+		focusSelectedStation(getMapPadding());
 	}
 
 	// Handle map click (deselect station)
@@ -121,11 +170,13 @@
 	}
 
 	// Center map on user position
-	function centerMap(pos: Position) {
+	function centerMap(pos: Position, zoom = FOLLOW_ZOOM) {
 		if (!map) return;
-		map.flyTo({
+		map.easeTo({
 			center: [pos.coords.longitude, pos.coords.latitude],
-			zoom: 16,
+			padding: getMapPadding(),
+			zoom,
+			duration: 220,
 		});
 	}
 
@@ -136,15 +187,38 @@
 		}
 	});
 
+	$effect(() => {
+		if (!mapLoaded || !map) return;
+		const padding = getMapPadding();
+		const paddingSignature = getPaddingSignature(padding);
+		if (paddingSignature === lastAppliedPaddingSignature) return;
+		lastAppliedPaddingSignature = paddingSignature;
+
+		if ($following && !blurred && $currentPos) {
+			centerMap($currentPos);
+			return;
+		}
+
+		if ($selectedStation != null) {
+			focusSelectedStation(padding);
+			return;
+		}
+
+		map.easeTo({ padding, duration: 180 });
+	});
+
 	// Reset bottom padding when station is deselected
 	$effect(() => {
 		if ($selectedStation == null) bottomPadding = 0;
 	});
 
 	// Load images when map is ready
-	async function handleMapLoad(e: maplibregl.MapLibreEvent) {
+	async function handleMapLoad(_e: maplibregl.MapLibreEvent) {
 		console.debug('Map loaded');
 		mapLoaded = true;
+		cameraPadding = getMapPadding();
+		lastAppliedPaddingSignature = getPaddingSignature(cameraPadding);
+		map?.setPadding(cameraPadding);
 	}
 
 	// Reload images when theme changes
@@ -182,14 +256,15 @@
 
 <MapLibre
 	bind:map
+	bind:center={cameraCenter}
+	bind:zoom={cameraZoom}
 	class="h-full w-full"
 	style={mapStyle}
-	center={{ lng: -9.15, lat: 38.744 }}
-	zoom={11}
-	padding={{ top: topPadding, bottom: Math.min(bottomPadding, window.innerHeight / 2), left: leftPadding, right: 0 }}
+	padding={cameraPadding}
 	attributionControl={false}
 	autoloadGlobalCss={false}
 	onload={handleMapLoad}
+	onmove={handleMove}
 	onclick={handleMapClick}
 	ondragstart={handleDragStart}
 	onrotate={handleRotate}
