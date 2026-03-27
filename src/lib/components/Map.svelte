@@ -131,7 +131,6 @@
 		const camera: maplibregl.EaseToOptions = {
 			center: [station.longitude, station.latitude],
 			padding,
-			duration: 220,
 		};
 		if (zoom !== undefined) camera.zoom = zoom;
 		map.easeTo(camera);
@@ -176,7 +175,7 @@
 			center: [pos.coords.longitude, pos.coords.latitude],
 			padding: getMapPadding(),
 			zoom,
-			duration: 220,
+			duration: 1500,
 		});
 	}
 
@@ -204,7 +203,7 @@
 			return;
 		}
 
-		map.easeTo({ padding, duration: 180 });
+		map.easeTo({ padding });
 	});
 
 	// Reset bottom padding when station is deselected

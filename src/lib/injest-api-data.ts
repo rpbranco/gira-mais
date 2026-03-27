@@ -143,8 +143,8 @@ export function ingestLastUnratedTrip(lastTripData:Q<['unratedTrips', 'tripHisto
 	if (unratedTrip == null || unratedTrip.code == null || unratedTrip.asset == null) return;
 	const endToNow = (new Date).getTime() - new Date(unratedTrip.endDate).getTime();
 	if (unratedTrip) tripPayWithPoints(unratedTrip.code); // attempt to pay with points just in case
-	// check if 7 days have passed
-	if (endToNow > 24 * 60 * 60 * 1000 * 7){
+	// Only show rating UI for recent trips; auto-rate older ones.
+	if (endToNow > 24 * 60 * 60 * 1000) {
 		// auto-rate trip as 5 stars
 		rateTrip(unratedTrip.code, 5)
 		return;
