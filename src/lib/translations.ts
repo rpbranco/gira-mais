@@ -89,6 +89,26 @@ const translations = {
 		en: 'FREE\nDOCKS',
 		pt: 'DOCAS\nLIVRES',
 	},
+	bike_rating_bad: {
+		en: 'Bad condition',
+		pt: 'Mau estado',
+	},
+	bike_rating_poor: {
+		en: 'Poor condition',
+		pt: 'Estado fraco',
+	},
+	bike_rating_neutral: {
+		en: 'Some problems',
+		pt: 'Alguns problemas',
+	},
+	bike_rating_ok: {
+		en: 'Mostly good',
+		pt: 'Quase boa',
+	},
+	bike_rating_good: {
+		en: 'Good condition',
+		pt: 'Bom estado',
+	},
 	duration_label: {
 		en: 'DURATION',
 		pt: 'DURAÇÃO',

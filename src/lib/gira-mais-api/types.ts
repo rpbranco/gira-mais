@@ -46,3 +46,7 @@ export type BikeRatingPostRequest = {
 export type BikeRatingPostResponse = {
   success: boolean;
 }
+
+export type StationBikeRating = 1 | 2 | 3 | 4 | 5 | null;
+
+export type StationBikeRatingsGetResponse = Record<string, StationBikeRating>;

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { type StationInfo } from '$lib/map.svelte';
+	import type { StationBikeRating } from '$lib/gira-mais-api/types';
 	import { t } from '$lib/translations';
 	import { tryStartTrip } from '$lib/trip';
 	import IconBattery from '@tabler/icons-svelte/icons/battery';
@@ -10,16 +11,22 @@
 	import IconBolt from '@tabler/icons-svelte/icons/bolt';
 	import IconLock from '@tabler/icons-svelte/icons/lock';
 	import IconLockOpen from '@tabler/icons-svelte/icons/lock-open';
+	import IconMoodConfuzed from '@tabler/icons-svelte/icons/mood-confuzed';
+	import IconMoodEmpty from '@tabler/icons-svelte/icons/mood-empty';
+	import IconMoodHappy from '@tabler/icons-svelte/icons/mood-happy';
+	import IconMoodSmile from '@tabler/icons-svelte/icons/mood-smile';
+	import IconMoodWrrr from '@tabler/icons-svelte/icons/mood-wrrr';
 	import IconSettings from '@tabler/icons-svelte/icons/settings';
 	import { cubicOut } from 'svelte/easing';
 	import { Tween } from 'svelte/motion';
-	import { fade } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 
 	interface Props {
 		type?: 'classic'|'electric'|null;
 		id?: string;
 		battery?: number|null;
 		dock: string|null;
+		rating?: StationBikeRating;
 		disabled?: boolean;
 		serial: string;
 		station: StationInfo;
@@ -30,6 +37,7 @@
 		id = '',
 		battery = null,
 		dock,
+		rating = undefined,
 		disabled = false,
 		serial,
 		station,
@@ -43,6 +51,17 @@
 	let slider:HTMLDivElement;
 	let moved = false;
 	let waiting = $state(false);
+
+	function ratingLabel(rating: StationBikeRating | undefined) {
+		if (rating === 1) return $t('bike_rating_bad');
+		if (rating === 2) return $t('bike_rating_poor');
+		if (rating === 3) return $t('bike_rating_neutral');
+		if (rating === 4) return $t('bike_rating_ok');
+		if (rating === 5) return $t('bike_rating_good');
+		return '';
+	}
+
+	let hasRating = $derived(rating !== undefined && rating !== null);
 
 	function onPointerDown(event: PointerEvent & { currentTarget: EventTarget & HTMLDivElement }) {
 		dragging = true;
@@ -111,8 +130,25 @@
 			<!-- Weird styling to perfectly align with the other icons -->
 			<div class="text-label font-bold text-xl -mr-6 w-[42px]">--</div>
 		{/if}
-		<span class="text-[15px] font-bold text-primary">{id}</span>
-		<div class="grow"></div>
+		<div class="relative h-11 min-w-0 grow overflow-hidden">
+			<div class="absolute left-0 right-0 text-base font-bold text-primary leading-tight transition-all duration-150 ease-out {hasRating ? 'top-0 translate-y-0' : 'top-1/2 -translate-y-1/2'}">{id}</div>
+			{#if hasRating}
+				<div class="absolute bottom-0 left-0 right-0 flex h-4 items-center gap-1 text-label" transition:fly={{ y: -4, duration: 150, opacity: 0 }}>
+					{#if rating === 1}
+						<IconMoodWrrr size={16} stroke={2} class="shrink-0" />
+					{:else if rating === 2}
+						<IconMoodConfuzed size={16} stroke={2} class="shrink-0" />
+					{:else if rating === 3}
+						<IconMoodEmpty size={16} stroke={2} class="shrink-0" />
+					{:else if rating === 4}
+						<IconMoodSmile size={16} stroke={2} class="shrink-0" />
+					{:else}
+						<IconMoodHappy size={16} stroke={2} class="shrink-0" />
+					{/if}
+					<div class="translate-y-px truncate text-xs font-semibold uppercase leading-none">{ratingLabel(rating)}</div>
+				</div>
+			{/if}
+		</div>
 		{#if type === 'electric' && battery != null}
 			<div class="flex items-center h-6 px-[6px] bg-primary rounded-md gap-1">
 				<span class="text-xs font-bold text-background">{battery}%</span>

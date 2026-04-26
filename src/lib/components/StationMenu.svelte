@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Bike from '$lib/components/Bike.svelte';
 	import BikeSkeleton from '$lib/components/BikeSkeleton.svelte';
+	import { getStationBikeRatings } from '$lib/gira-mais-api/gira-mais-api';
+	import type { StationBikeRating } from '$lib/gira-mais-api/types';
 	import { getStationInfo } from '$lib/gira-api/api';
 	import { IdToSerial } from '$lib/gira-api/bikeMapping';
 	import { currentPos } from '$lib/location';
@@ -50,9 +52,21 @@
 		return undefined;
 	});
 
-	let bikeInfo:({type:'electric'|'classic', id:string, battery:number|null, dock:string, serial:string}|{id:string, serial: string})[] = $state([]);
-	function isRealBike(bike: typeof bikeInfo[number]): bike is {type:'electric'|'classic', id:string, battery:number|null, dock:string, serial:string} {
+	let bikeInfo:({type:'electric'|'classic', id:string, battery:number|null, dock:string, serial:string, rating?:StationBikeRating}|{id:string, serial: string, rating?:StationBikeRating})[] = $state([]);
+	function isRealBike(bike: typeof bikeInfo[number]): bike is {type:'electric'|'classic', id:string, battery:number|null, dock:string, serial:string, rating?:StationBikeRating} {
 		return 'type' in bike === true;
+	}
+
+	async function loadBikeRatings(bikeIds: string[]) {
+		try {
+			const ratings = await getStationBikeRatings(bikeIds);
+			bikeInfo = bikeInfo.map(bike => {
+				if (!bikeIds.includes(bike.id)) return bike;
+				return { ...bike, rating: ratings[bike.id] ?? null };
+			});
+		} catch (error) {
+			console.error('Failed to get bike ratings', error);
+		}
 	}
 
 	let isScrolling = $state(false);
@@ -125,6 +139,7 @@
 			bikeInfo = tmpBikeInfo;
 			freeDocks = Math.max(tmpDocks - tmpBikes, 0);
 			bikes = tmpBikes;
+			loadBikeRatings(tmpBikeInfo.map(bike => bike.id));
 		// $stations = $stations;
 		}
 		await tick();
@@ -192,8 +207,11 @@
 				return;
 			}
 			let serial = IdToSerial.get(bikeId);
-			if (serial) bikeInfo.push({ id: bikeId, serial: serial });
-			else {
+			if (serial) {
+				const addedBikeId = bikeId;
+				bikeInfo.push({ id: addedBikeId, serial: serial });
+				loadBikeRatings([addedBikeId]);
+			} else {
 				errorMessages.add(
 					$t('bike_unlock_no_serial_error'),
 					3000,
@@ -285,9 +303,9 @@
 					{@const station = getStationFromSerial($selectedStation)}
 					{#each bikeInfo as bike}
 						{#if isRealBike(bike)}
-							<Bike type={bike.type} id={bike.id} battery={bike.battery} dock={bike.dock} serial={bike.serial} disabled={isScrolling} station={station} />
+							<Bike type={bike.type} id={bike.id} battery={bike.battery} dock={bike.dock} serial={bike.serial} rating={bike.rating} disabled={isScrolling} station={station} />
 						{:else}
-							<Bike type={null} id={bike.id} battery={null} dock={null} serial={bike.serial} disabled={isScrolling} station={station} />
+							<Bike type={null} id={bike.id} battery={null} dock={null} serial={bike.serial} rating={bike.rating} disabled={isScrolling} station={station} />
 						{/if}
 
 					{/each}

@@ -1,6 +1,6 @@
 import { dev, version } from '$app/environment';
 import { GIRA_MAIS_API_URL } from '$lib/constants';
-import type { BikeRatingPostRequest, BikeRatingPostResponse, ErrorStatisticsPostRequest, ErrorStatisticsPostResponse, MessageGetResponse, TripStatisticsPostRequest, TripStatisticsPostResponse, UsageStatisticsPostRequest, UsageStatisticsPostResponse } from '$lib/gira-mais-api/types';
+import type { BikeRatingPostRequest, BikeRatingPostResponse, ErrorStatisticsPostRequest, ErrorStatisticsPostResponse, MessageGetResponse, StationBikeRatingsGetResponse, TripStatisticsPostRequest, TripStatisticsPostResponse, UsageStatisticsPostRequest, UsageStatisticsPostResponse } from '$lib/gira-mais-api/types';
 import { appSettings } from '$lib/settings';
 import { getLocale } from '$lib/translations';
 import { httpRequestWithRetry } from '$lib/utils';
@@ -99,4 +99,25 @@ export async function postBikeRating(tripCode: string, bikePlate: string, rating
 		} as BikeRatingPostRequest,
 	});
 	return response?.data as BikeRatingPostResponse;
+}
+
+export async function getStationBikeRatings(bikeIds: string[]) {
+	try {
+		const response = await httpRequestWithRetry({
+			method: 'get',
+			url: GIRA_MAIS_API_URL + '/statistics/ratings/station?bikes=' + bikeIds.map(encodeURIComponent).join(','),
+			headers: {
+				'User-Agent': `Gira+/${version}`,
+				'Content-Type': 'application/json',
+			},
+		});
+
+		return response?.data as StationBikeRatingsGetResponse;
+	} catch (error) {
+		reportErrorEvent('bike_ratings_fetch_error', JSON.stringify({
+			bikeIds,
+			error: error instanceof Error ? error.message : error,
+		}));
+		throw error;
+	}
 }
