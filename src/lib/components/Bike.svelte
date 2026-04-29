@@ -130,20 +130,20 @@
 			<!-- Weird styling to perfectly align with the other icons -->
 			<div class="text-label font-bold text-xl -mr-6 w-[42px]">--</div>
 		{/if}
-		<div class="relative h-11 min-w-0 grow overflow-hidden">
-			<div class="absolute left-0 right-0 text-base font-bold text-primary leading-tight transition-all duration-150 ease-out {hasRating ? 'top-0 translate-y-0' : 'top-1/2 -translate-y-1/2'}">{id}</div>
+		<div class="relative h-[42px] min-w-0 grow overflow-hidden">
+			<div class="absolute left-0 right-0 text-base font-bold text-primary leading-tight transition-all duration-150 ease-out {hasRating ? 'top-0 translate-y-[0px]' : 'top-1/2 -translate-y-1/2'}">{id}</div>
 			{#if hasRating}
 				<div class="absolute bottom-0 left-0 right-0 flex h-4 items-center gap-1 text-label" transition:fly={{ y: -4, duration: 150, opacity: 0 }}>
 					{#if rating === 1}
-						<IconMoodWrrr size={16} stroke={2} class="shrink-0" />
+						<IconMoodWrrr size={18} stroke={2} />
 					{:else if rating === 2}
-						<IconMoodConfuzed size={16} stroke={2} class="shrink-0" />
+						<IconMoodConfuzed size={18} stroke={2}/>
 					{:else if rating === 3}
-						<IconMoodEmpty size={16} stroke={2} class="shrink-0" />
+						<IconMoodEmpty size={18} stroke={2} />
 					{:else if rating === 4}
-						<IconMoodSmile size={16} stroke={2} class="shrink-0" />
+						<IconMoodSmile size={18} stroke={2} />
 					{:else}
-						<IconMoodHappy size={16} stroke={2} class="shrink-0" />
+						<IconMoodHappy size={18} stroke={2} />
 					{/if}
 					<div class="translate-y-px truncate text-xs font-semibold uppercase leading-none">{ratingLabel(rating)}</div>
 				</div>
